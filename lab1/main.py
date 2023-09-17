@@ -64,7 +64,6 @@ def formSMT2(ineqs):
         if val not in visited:
             f.write(f'(declare-fun {val} () Int)\n')
     for i in ineqs:
-        #print(i)
         f.write(f'(assert {i})\n')
     for i in toDeclare:
         if (i.startswith('a') and i.endswith('00')):
@@ -221,10 +220,8 @@ def generateSecondInequality(left, right):
     left_elements = getall(0, "(* ", [], funcs, fnames)
     r_right = right.find(')')
     funcs = right[:r_right].split('(')[:-1]
-    print(left_elements, "LEFT")
     ineq = '(and '
     right_elements = getall(0, "(* ", [], funcs, fnames)
-    print(right_elements, "RIGHT")
     ineqs = []
     external_prev = []
     for i in left_elements:
@@ -264,8 +261,6 @@ def generateSecondInequality(left, right):
             r_external_prev = prev
         else:
             r_external_prev = arctic_sum_1x1(r_external_prev, prev)
-    print(external_prev)
-    print(r_external_prev)
     for i in range(len(external_prev)):
         for j in range(len(external_prev[0])):
             ineq += f'(arcgg {external_prev[i][j]} {r_external_prev[i][j]}) '
@@ -278,66 +273,13 @@ def generateThirdInequality(second, first):
     return f'(or {s_first} {s_second})'
 
 
-def generateFourthInequlaity(left, right, fnames):
-    visited = []
-    l_right = left.find(')')
-    funcs = left[:l_right].split('(')[:-1]
-    inequality = "(and "
-    for func in funcs:
-        if func not in visited:
-            current = "(and "
-            visited.append(func)
-            a_mat = expandToMatrix(fnames[func][0], 2)
-            b_mat = expandToMatrix(fnames[func][1], 1)
-            ineq_a =  matrixGreaterOrEqualTo(a_mat,E)
-            for i in range(len(ineq_a)):
-                current += f'({ineq_a[i]}) '
-
-            ineq_b = matrixGreaterOrEqualTo(b_mat, O)
-            for i in range(len(ineq_b)):
-                current += f'({ineq_b[i]}) '
-            current = current[:-1] +  ')'
-            inequality += f'(arcgg {fnames[func][1]}  0) '
-    r_right = right.find(')')
-    funcs = right[:r_right].split('(')[:-1]
-    for func in funcs:
-        if func not in visited:
-            visited.append(func)
-            inequality += f'(arcgg {fnames[func][0]}  1) '
-            inequality += f'(arcgg{fnames[func][1]} 0) '
-    return inequality[:-1] + ")"
-
-
-def generateFifthInequality(left, right, fnames):
-    l_right = left.find(')')
-    funcs = left[:l_right].split('(')[:-1]
-    visited = []
-    s = "(and "
-    for func in funcs:
-        if func not in visited:
-            cur = f'(or (> {fnames[func][0]}  1) (> {fnames[func][1]}  0)) '
-            s += cur
-            visited.append(func)
-    r_right = right.find(')')
-    funcs = right[:r_right].split('(')[:-1]
-    for func in funcs:
-        if func not in visited:
-            cur = f'(or ( > {fnames[func][0]}  1) (> {fnames[func][1]}  0)) '
-            s += cur
-            visited.append(func)
-    return s + ")"
 
 
 def main():
     global toDeclare
     lefts, rights = input()
-    ls = []
-    # os.exec('z3 -h')
     l = generate(lefts, "left")
     r = generate(rights, "right")
-
-    print(l[0])
-    print(r[0])
     ineqs = []
 
     for i in range(len(lefts)):
@@ -348,7 +290,6 @@ def main():
         ineqs.append(second)
         ineqs.append(third)
 
-        print(toDeclare)
     formSMT2(ineqs)
 
     print(fnames)
