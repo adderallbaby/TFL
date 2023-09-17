@@ -266,11 +266,6 @@ def generateSecondInequality(left, right):
             ineq += f'(arcgg {external_prev[i][j]} {r_external_prev[i][j]}) '
     return ineq[:-1] +' )'
 
-def generateThirdInequality(second, first):
-    s_first = f'(and {first} {first})'
-    s_second = f'(and {second} {second})'
-
-    return f'(or {s_first} {s_second})'
 
 
 
