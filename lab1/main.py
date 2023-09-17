@@ -67,7 +67,11 @@ def formSMT2(ineqs):
         #print(i)
         f.write(f'(assert {i})\n')
     for i in toDeclare:
-        f.write(f'(assert (> {i} -1))')
+        if (i.startswith('a') and i.endswith('00')):
+            f.write(f'(assert (> {i} -1))\n')
+        if (i.startswith('b') and i.endswith('1')):
+            f.write(f'(assert (or (> {i} -1) (and (= 0 {i[:-1]}0) (= 0 {i} ))))\n')
+
     f.write('(check-sat)\n')
     f.write('(get-model)\n')
     f.write('(exit)')
@@ -211,6 +215,7 @@ def getall(idx, s, gl, funcs, a):
 
 
 def generateSecondInequality(left, right):
+    global a11, b1
     l_right = left.find(')')
     funcs = left[:l_right].split('(')[:-1]
     left_elements = getall(0, "(* ", [], funcs, fnames)
