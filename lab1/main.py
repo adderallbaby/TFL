@@ -1,4 +1,3 @@
-
 # This is a sample Python script.
 import os
 import subprocess
@@ -9,27 +8,97 @@ left_as = []
 right_as = []
 left_bs = []
 right_bs = []
-
+toDeclare = []
 fnames = {}
+E = [[1,0],
+     [0,1]]
+O = [[0,0], [0,0]]
+
 # -------------------------
 import sys
 
+def matrixGreaterThan(A,B):
+    ineqs = []
+    for i in range(len(A)):
+        for j in range(len(A[0])):
+            ineqs.append(f'(arcgg {A[i][j]} {B[i][j]})')
+    return ineqs
 
+def matrixGreaterOrEqualTo(A,B):
+    ineqs = []
+    for i in range(len(A)):
+        for j in range(len(A[0])):
+            ineqs.append(f'(arcgg {A[i][j]} {B[i][j]})')
+    return ineqs
+def expandToMatrix(element, width):
+    global toDeclare
+    matrix = [[0] * width, [0] * width]
+    if width == 2:
+        for i in range(len(matrix)):
+            for j in range(len(matrix[i])):
+                matrix[i][j] = element +f'{i}{j}'
+                if element +f'{i}{j}' not in toDeclare:
+                    toDeclare.append(element +f'{i}{j}')
+        return matrix
+    else:
+        if element + '0' not in toDeclare:
+            toDeclare.append(element + '0')
+        if element + '1' not in toDeclare:
+            toDeclare.append(element + '1')
+        matrix[0][0] = element + '0'
+        matrix[1][0] = element + '1'
+        return matrix
 def formSMT2(ineqs):
-    header = '(set-logic QF_NIA)\n'
+    global toDeclare
+    header = '(set-logic QF_NIA)\n' \
+             '(define-fun arcmax ((a Int) (b Int)) Int\n' \
+    '(ite (>= a b)a b))\n' \
+'(define-fun arcsum ((a Int) (b Int)) Int\n' \
+    '(ite (and (> a -1)  (> b -1)) (+ a b) (ite (<= a -1) b a )))\n ' \
+'(define-fun arcgg ((a Int) (b Int)) Bool\n' \
+    '(ite (or (> a b) (and (<= a -1) (<= b -1))) true false))\n'
     f = open('lab1.smt2', 'w')
     f.write(header)
-    for val in fnames.values():
-        f.write(f'(declare-fun {val[0]} () Int)\n')
-        f.write(f'(declare-fun {val[1]} () Int)\n')
+    visited= []
+    for val in toDeclare:
+        if val not in visited:
+            f.write(f'(declare-fun {val} () Int)\n')
     for i in ineqs:
+        #print(i)
         f.write(f'(assert {i})\n')
-
+    for i in toDeclare:
+        f.write(f'(assert (> {i} -1))')
     f.write('(check-sat)\n')
     f.write('(get-model)\n')
     f.write('(exit)')
     f.close()
 
+
+def arctic_mult_2x2(X,Y):
+    result = [[0, 0],
+              [0, 0]]
+    result[0][0] = f'(arcmax (arcsum {X[0][0]} {Y[0][0]}) (arcsum {X[0][1]} {Y[1][0]}))'
+    result[0][1] = f'(arcmax (arcsum {X[0][0]} {Y[0][1]}) (arcsum {X[0][1]} {Y[1][1]}))'
+    result[1][0] = f'(arcmax (arcsum {X[1][0]} {Y[0][0]}) (arcsum {X[1][1]} {Y[1][0]}))'
+    result[1][1] = f'(arcmax (arcsum {X[1][0]} {Y[0][1]}) (arcsum {X[1][1]} {Y[1][1]}))'
+    return result
+
+def arctic_mult_2x1(X,Y):
+    result = [[0],[0]]
+
+    result[0][0] = f'(arcmax (arcsum {X[0][0]} {Y[0][0]}) (arcsum {X[0][1]} {Y[1][0]}))'
+    result[1][0] = f'(arcmax (arcsum {X[1][0]} {Y[0][0]}) (arcsum {X[1][1]} {Y[1][0]}))'
+    return result
+def arctic_mult(X,Y):
+    if(len(Y[0]) == 1):
+        return arctic_mult_2x1(X,Y)
+    elif(len(Y[0]) == 2):
+        return arctic_mult_2x2(X,Y)
+def arctic_sum_1x1(X,Y):
+    result = [[0],[0]]
+    result[0][0] = f'(arcsum {X[0][0]} {Y[0][0]})'
+    result[1][0] = f'(arcsum {X[1][0]} {Y[1][0]})'
+    return result
 def input():
     lefts = []
     rights = []
@@ -110,19 +179,27 @@ def generate(functions, flag):
 
 
 def generateFirstInequality(left, right):
-    left_side = "(* "
     left_funcs = left[:left.find('x')].split('(')[:-1]
+    prev = []
     for func in left_funcs:
-        left_side += fnames[func][0] + " "
-    left_side += ")"
-    right_side = "(* "
-
+        m = expandToMatrix(fnames[func][0],2)
+        if prev == []:
+            prev = m
+        else:
+            prev = arctic_mult_2x2(prev,m)
+    r_prev = []
     right_funcs = right[:right.find('x')].split('(')[:-1]
     for func in right_funcs:
-        right_side += fnames[func][0] + " "
-    right_side += ")"
-
-    return "(>= " + f'{left_side}' + " " + f'{right_side})'
+        m = expandToMatrix(fnames[func][0], 2)
+        if r_prev == []:
+            r_prev = m
+        else:
+            r_prev = arctic_mult_2x2(r_prev, m)
+    ineq = '(and '
+    for i in range(len(prev)):
+        for j in range(len(prev[i])):
+            ineq += f'(arcgg {prev[i][j]} {r_prev[i][j]}) '
+    return ineq[:-1] + ')'
 
 
 def getall(idx, s, gl, funcs, a):
@@ -134,33 +211,66 @@ def getall(idx, s, gl, funcs, a):
 
 
 def generateSecondInequality(left, right):
-    left_side = "(+ "
-    right_side = "(+ "
     l_right = left.find(')')
     funcs = left[:l_right].split('(')[:-1]
     left_elements = getall(0, "(* ", [], funcs, fnames)
     r_right = right.find(')')
     funcs = right[:r_right].split('(')[:-1]
+    print(left_elements, "LEFT")
+    ineq = '(and '
     right_elements = getall(0, "(* ", [], funcs, fnames)
+    print(right_elements, "RIGHT")
+    ineqs = []
+    external_prev = []
     for i in left_elements:
-        s = i[1:-1]
-        if len(s.split(" ")) == 2:
-            i = s.split(' ')[1]
-        left_side += i + " "
-    left_side += ')'
+        elems = i[1:-1].split(" ")[1:]
+        prev = []
+        for el in elems:
+            width = 0
+            if 'b' in el:
+                width = 1
+            else:
+                width = 2
+            m = expandToMatrix(el, width)
+            if prev == []:
+                prev = m
+            else:
+                prev = arctic_mult(prev, m)
+        if external_prev == []:
+            external_prev = prev
+        else:
+            external_prev = arctic_sum_1x1(external_prev, prev)
+    r_external_prev = []
     for i in right_elements:
-        s = i[1:-1]
-        if len(s.split(" ")) == 2:
-            i = s.split(' ')[1]
-        right_side += i + " "
-    right_side += ')'
-    return "(>= " + f'{left_side}' + " " + f'{right_side})'
+        elems = i[1:-1].split(" ")[1:]
+        prev = []
+        for el in elems:
+            width = 0
+            if 'b' in el:
+                width = 1
+            else:
+                width = 2
+            m = expandToMatrix(el, width)
+            if prev == []:
+                prev = m
+            else:
+                prev = arctic_mult(prev, m)
+        if r_external_prev == []:
+            r_external_prev = prev
+        else:
+            r_external_prev = arctic_sum_1x1(r_external_prev, prev)
+    print(external_prev)
+    print(r_external_prev)
+    for i in range(len(external_prev)):
+        for j in range(len(external_prev[0])):
+            ineq += f'(arcgg {external_prev[i][j]} {r_external_prev[i][j]}) '
+    return ineq[:-1] +' )'
 
+def generateThirdInequality(second, first):
+    s_first = f'(and {first} {first})'
+    s_second = f'(and {second} {second})'
 
-def generateThirdInequality(left, right, second, first):
-    second.replace("=", "")
-    first.replace("=", "")
-    return f'(or {first} {second})'
+    return f'(or {s_first} {s_second})'
 
 
 def generateFourthInequlaity(left, right, fnames):
@@ -170,16 +280,26 @@ def generateFourthInequlaity(left, right, fnames):
     inequality = "(and "
     for func in funcs:
         if func not in visited:
+            current = "(and "
             visited.append(func)
-            inequality += f'(>= {fnames[func][0]}  1) '
-            inequality += f'(>= {fnames[func][1]}  0) '
+            a_mat = expandToMatrix(fnames[func][0], 2)
+            b_mat = expandToMatrix(fnames[func][1], 1)
+            ineq_a =  matrixGreaterOrEqualTo(a_mat,E)
+            for i in range(len(ineq_a)):
+                current += f'({ineq_a[i]}) '
+
+            ineq_b = matrixGreaterOrEqualTo(b_mat, O)
+            for i in range(len(ineq_b)):
+                current += f'({ineq_b[i]}) '
+            current = current[:-1] +  ')'
+            inequality += f'(arcgg {fnames[func][1]}  0) '
     r_right = right.find(')')
     funcs = right[:r_right].split('(')[:-1]
     for func in funcs:
         if func not in visited:
             visited.append(func)
-            inequality += f'(>= {fnames[func][0]}  1) '
-            inequality += f'(>= {fnames[func][1]} 0) '
+            inequality += f'(arcgg {fnames[func][0]}  1) '
+            inequality += f'(arcgg{fnames[func][1]} 0) '
     return inequality[:-1] + ")"
 
 
@@ -204,7 +324,7 @@ def generateFifthInequality(left, right, fnames):
 
 
 def main():
-    print('Пример ввода:\nf(g(x)) -> g(f(x))\nf(h(x)) ->h(f(x))\n\nКак только на ввод поступает пустая строка, ввод считается завершенным')
+    global toDeclare
     lefts, rights = input()
     ls = []
     # os.exec('z3 -h')
@@ -214,18 +334,23 @@ def main():
     print(l[0])
     print(r[0])
     ineqs = []
-    for i in range(len(rights)):
-        ineqs.append(generateFirstInequality(lefts[i], rights[i]))
-        ineqs.append(generateSecondInequality(lefts[i], rights[i]))
-        ineqs.append(generateThirdInequality(lefts[i], rights[i], generateFirstInequality(lefts[i], rights[i]),
-                                    generateSecondInequality(lefts[i], rights[i])))
-        ineqs.append(generateFourthInequlaity(lefts[i], rights[i], fnames))
-        ineqs.append(generateFifthInequality(lefts[i], rights[i], fnames))
 
+    for i in range(len(lefts)):
+        first = generateFirstInequality(lefts[i], rights[i])
+        second = generateSecondInequality(lefts[i], rights[i])
+        third = generateThirdInequality(first, second)
+        ineqs.append(first)
+        ineqs.append(second)
+        ineqs.append(third)
+
+        print(toDeclare)
     formSMT2(ineqs)
+
     print(fnames)
 
 
 if __name__ == '__main__':
     main()
+    print('__________________________________________________________________________________________________________________________________________________________')
+
 
