@@ -1,3 +1,3 @@
 Запуск:
-sh run.sh
+sh run.sh  
 Вариант 3
