@@ -280,7 +280,6 @@ def main():
     for i in range(len(lefts)):
         first = generateFirstInequality(lefts[i], rights[i])
         second = generateSecondInequality(lefts[i], rights[i])
-        third = generateThirdInequality(first, second)
         ineqs.append(first)
         ineqs.append(second)
         ineqs.append(third)
