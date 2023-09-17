@@ -282,7 +282,6 @@ def main():
         second = generateSecondInequality(lefts[i], rights[i])
         ineqs.append(first)
         ineqs.append(second)
-        ineqs.append(third)
 
     formSMT2(ineqs)
 
