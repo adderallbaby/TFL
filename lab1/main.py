@@ -66,10 +66,18 @@ def formSMT2(ineqs):
     for i in ineqs:
         f.write(f'(assert {i})\n')
     for i in toDeclare:
-        if (i.startswith('a') and i.endswith('00')):
-            f.write(f'(assert (> {i} -1))\n')
-        if (i.startswith('b') and i.endswith('1')):
-            f.write(f'(assert (or (> {i} -1) (and (= 0 {i[:-1]}0) (= 0 {i} ))))\n')
+        if (i.startswith('a')):
+                if i.endswith('00'):
+                    f.write(f'(assert (> {i} -1))\n')
+                else:
+                    f.write(f'(assert (>= {i} -1))\n')
+
+        if (i.startswith('b') ):
+                if i.endswith('0'):
+                    f.write(f'(assert (or (> {i} -1) (and (= 0 {i[:-1]}0) (= 0 {i} ))))\n')
+                else:
+                    f.write(f'(assert (>= {i} -1))\n')
+
 
     f.write('(check-sat)\n')
     f.write('(get-model)\n')
@@ -294,5 +302,4 @@ if __name__ == '__main__':
 
     main()
     print('__________________________________________________________________________________________________________________________________________________________')
-
 
