@@ -1,7 +1,17 @@
 # This is a sample Python script.
 import os
 import subprocess
+header = '(set-logic QF_NIA)\n' \
+             '(define-fun arcmax ((a Int) (b Int)) Int\n' \
+    '(ite (>= a b)a b))\n' \
+'(define-fun arcsum ((a Int) (b Int)) Int\n' \
+    '(ite (and (> a -1)  (> b -1)) (+ a b) (ite (<= a -1) b a )))\n ' \
+'(define-fun arcgg ((a Int) (b Int)) Bool\n' \
+    '(ite (or (> a b) (and (<= a -1) (<= b -1))) true false))\n'
 
+tail=     '(check-sat)\n' \
+    '(get-model)\n'\
+    '(exit)\n'
 a_iterator = 0
 b_iterator = 0
 left_as = []
@@ -49,14 +59,8 @@ def expandToMatrix(element, width):
         matrix[1][0] = element + '1'
         return matrix
 def formSMT2(ineqs):
-    global toDeclare
-    header = '(set-logic QF_NIA)\n' \
-             '(define-fun arcmax ((a Int) (b Int)) Int\n' \
-    '(ite (>= a b)a b))\n' \
-'(define-fun arcsum ((a Int) (b Int)) Int\n' \
-    '(ite (and (> a -1)  (> b -1)) (+ a b) (ite (<= a -1) b a )))\n ' \
-'(define-fun arcgg ((a Int) (b Int)) Bool\n' \
-    '(ite (or (> a b) (and (<= a -1) (<= b -1))) true false))\n'
+    global toDeclare,header,tail
+
     f = open('lab1.smt2', 'w')
     f.write(header)
     visited= []
@@ -77,11 +81,9 @@ def formSMT2(ineqs):
                     f.write(f'(assert (or (> {i} -1) (and (= 0 {i[:-1]}0) (= 0 {i} ))))\n')
                 else:
                     f.write(f'(assert (>= {i} -1))\n')
+    f.write(tail)
 
 
-    f.write('(check-sat)\n')
-    f.write('(get-model)\n')
-    f.write('(exit)')
     f.close()
 
 
@@ -302,4 +304,3 @@ if __name__ == '__main__':
 
     main()
     print('__________________________________________________________________________________________________________________________________________________________')
-
