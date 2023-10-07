@@ -37,7 +37,8 @@ def eliminateStates(transitions,states):
         transitions = newArr
     return transitions
 def removeStates(transitions,states,initial_regex,final_states):
-    
+    #print(states)
+    #print(transitions)
     addEpsilons(transitions,initial_regex,final_states)
     if initial_regex in final_states:
         states.remove(initial_regex)
@@ -48,4 +49,5 @@ def removeStates(transitions,states,initial_regex,final_states):
     #regex.get_graph().draw('prefinal.png', prog= 'dot')
 
     transitions = eliminateStates(transitions,states)
+    #print(transitions)
     return transitions
