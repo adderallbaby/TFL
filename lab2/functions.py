@@ -10,7 +10,19 @@ def validParentheses(string):
             stack.pop()
 
     return len(stack) == 0
+def prettyInorder(root):
+    if root is None:
+        return ''
+    if root.val == '*':
+        return "("+prettyInorder(root.left) + ")*"
+    if root.val != '·':
+        out = prettyInorder(root.left) + root.val + prettyInorder(root.right)
+    else: 
+        out = prettyInorder(root.left) +  prettyInorder(root.right)
+    if root.val in '#|':
+        return '(' + out + ')'
 
+    return out
 def getValidParentheses(stack, out):
     while len(stack) > 0 and stack[-1] != "(":
         out.append(stack.pop())
@@ -44,8 +56,8 @@ def makeLeftSided(node):
 
     if node == None :
         return node
-    if  node.val == '·':
-        return node
+    #if  node.val == '·':
+    #    return node
     if node.val == '|' and node.right.val == '|':
         #print(deriv_generator.inorder(node))
 
@@ -53,6 +65,7 @@ def makeLeftSided(node):
         node = rotate_left(node)
     #print(deriv_generator.inorder(node))
     node.left = makeLeftSided(node.left)
+    node.right = makeLeftSided(node.right)
     return node
 #           |
 #((a)*#b)              |
