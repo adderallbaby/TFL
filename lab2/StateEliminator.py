@@ -18,6 +18,7 @@ def main(alphabet, initial_regex):
     final_states, states,transitions, initial_regex = FSMgenerator.main(alphabet, initial_regex)
     #print(final_states)
     states = list(set(states))
+    #print(states)
 
     #for real in real_states:
     #    if real_states.count(real) > 1:
@@ -34,13 +35,28 @@ def main(alphabet, initial_regex):
 
     regex = Regex()
 
-    machine = GraphMachine(model= regex, states=states, transitions=transitions, initial='INPUT',show_conditions=True)
+    machine = GraphMachine(model= regex, states=states, transitions=transitions, initial=initial_regex,show_conditions=True)
     regex.get_graph().draw('prefinal.png', prog= 'dot')
 
     transitions = backend_elim.removeStates(transitions,states,initial_regex,final_states)
     regular = ''
+    #print(transitions)
     for transition in transitions:
-        regular += transition['trigger'] + '|'
+        #print(transition['trigger'])
+
+        #if '()' not in transition['trigger']:
+        if not ( transition['trigger'] == ''):
+
+            #print(regular, "not")
+            if '()' in transition['trigger']:
+                #print(regular, 'reg')
+                regular += transition['trigger'].replace('()', '(ε)') + '|'
+                #print(regular, 'reg')
+
+            #print(regular, 'yes)
+            else:
+                regular += transition['trigger'] + '|'
+
     regular = regular[:-1]
     #print(states)
 
@@ -51,7 +67,8 @@ def main(alphabet, initial_regex):
         regular = (deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(regular))))
     
         deriv_generator.postorder(regular)
-        regular = deriv_generator.inorder(regular)
+        #regular = deriv_generator.inorder(regular)
+        regular = functions.prettyInorder(regular)
         #print(regular)
     
     #print(i)
