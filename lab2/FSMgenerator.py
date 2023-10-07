@@ -21,7 +21,7 @@ def getFSM(alphabet, initial_regex):
     #print(initial_regex, 'INITAL')
     final_states = []
 
-    if deriv_generator.nullable(tree):
+    if deriv_generator.lambda_func(tree):
         final_states.append(initial_regex)
     states = [initial_regex]
     
@@ -30,7 +30,7 @@ def getFSM(alphabet, initial_regex):
     transitions = []
     for symbol in alphabet:
         derivative = deriv_generator.getDerived(initial_regex, symbol)
-        if deriv_generator.nullable(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative)))) and derivative not in final_states:
+        if deriv_generator.lambda_func(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative)))) and derivative not in final_states:
 
             final_states.append(derivative)
         while derivative[-1] == ')' and derivative[0] == '(':
@@ -53,7 +53,8 @@ def getFSM(alphabet, initial_regex):
             continue
         for symbol in alphabet:
             derivative = deriv_generator.getDerived(states[iterator], symbol)
-            if deriv_generator.nullable(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative)))) and derivative not in final_states:
+            
+            if deriv_generator.lambda_func(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative)))) and derivative not in final_states:
                 final_states.append(derivative)
     
             while derivative[-1] == ')' and derivative[0] == '(':
@@ -68,8 +69,9 @@ def getFSM(alphabet, initial_regex):
                 #print(derivative)
                 states.append(deriv_generator.inorder(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative)))))
             if not derivative == '∅':
-                if not {'trigger':symbol, 'source':states[iterator], 'dest': deriv_generator.inorder(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative))))} in transitions:
-                    transitions.append({'trigger':symbol, 'source':states[iterator], 'dest': deriv_generator.inorder(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative))))})
+                same =functions.containsSameTree(treeStates, deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative))))
+                if (not {'trigger':symbol, 'source':states[iterator], 'dest': deriv_generator.inorder(deriv_generator.getBinaryTree(deriv_generator.getPostfix(deriv_generator.makeConcat(derivative))))} in transitions):
+                    transitions.append({'trigger':symbol, 'source':states[iterator], 'dest': deriv_generator.inorder(same)})
     
     
     
