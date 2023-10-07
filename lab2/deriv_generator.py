@@ -6,7 +6,7 @@ import functions
 #(((b#(a)*)|(b#(a)*))|((ab)#(a)*))
 #(((a)*|((a)*|(a#(a)*)))b)
 
- 
+
 #((((a#a)|a))*|((a|ε)(((a#a)|a))*)) RES a
 
 #(((a|ε)(((a#a)|a))*)|(((a#a)|a))*) RES a
@@ -25,25 +25,7 @@ def makeConcat(regex):
             augmented+=regex[i] 
     return augmented 
 
-def inorder(root):
-    if root is None:
-        return ''
-    if root.val == '*':
-        return "("+inorder(root.left) + ")*"
-    if root.val != '·':
-        l = inorder(root.left) 
-        out = l + root.val 
-        r = inorder(root.right) 
-        out += r
-    else: 
-        l = inorder(root.left) 
-        out = inorder(root.left) 
-        r = inorder(root.right) 
-        out += r
 
-    if root.val in '·#|*':
-        return '(' + out + ')'
-    return out
 class TreeNode:
     def __init__(self, data, left=None, right=None):
         self.val = data
@@ -144,7 +126,25 @@ def postorder(root):
             if root.left.val =='*':
                 dnode = clone(root.left.left)
                 root.left = dnode
+def inorder(root):
+    if root is None:
+        return ''
+    if root.val == '*':
+        return "("+inorder(root.left) + ")*"
+    if root.val != '·':
+        l = inorder(root.left)
+        out = l + root.val
+        r = inorder(root.right)
+        out += r
+    else:
+        l = inorder(root.left)
+        out = inorder(root.left)
+        r = inorder(root.right)
+        out += r
 
+    if root.val in '·#|*':
+        return '(' + out + ')'
+    return out
 def getPostfix(regex):
     stack = []
     output = ''
