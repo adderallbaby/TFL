@@ -4,16 +4,26 @@ import functions
 #(((((a)*|ε)#a)|(a)*)|a)
 #(((((a)*#a)|((a)*|ε))|(a)*)|ε)
 #(((b#(a)*)|(b#(a)*))|((ab)#(a)*))
-operations = {'(': 0, '#': 1, '|': 2, '·': 3, '*': 4}
-def makeConcat(src):
-    if not src:
+#(((a)*|((a)*|(a#(a)*)))b)
+
+
+#((((a#a)|a))*|((a|ε)(((a#a)|a))*)) RES a
+
+#(((a|ε)(((a#a)|a))*)|(((a#a)|a))*) RES a
+
+priority = {'(': 0, '#': 1, '|': 2, '·': 3, '*': 4}
+def makeConcat(regex):
+    specialCurrent = ')*#|'
+    specialPrev = '|(#'
+    if len(regex) == 0:
         return 'ε'
-    output = []
-    for i in range(0,len(src)):
-        if i > 0 and not(src[i] in '#|)*' or src[i - 1] in '(|#'):
-            output.append('·')
-        output.append(src[i])
-    return ''.join(output)
+    augmented = regex[0]
+    for i in range(1, len(regex)):
+        if  (not regex[i-1] in  specialPrev) and (not regex[i] in specialCurrent):
+            augmented += '·' + regex[i] 
+        else:
+            augmented+=regex[i] 
+    return augmented 
 
 def inorder(root):
     if root is None:
@@ -21,9 +31,15 @@ def inorder(root):
     if root.val == '*':
         return "("+inorder(root.left) + ")*"
     if root.val != '·':
-        out = inorder(root.left) + root.val + inorder(root.right)
+        l = inorder(root.left) 
+        out = l + root.val 
+        r = inorder(root.right) 
+        out += r
     else: 
-        out = inorder(root.left) +  inorder(root.right)
+        l = inorder(root.left) 
+        out = inorder(root.left) 
+        r = inorder(root.right) 
+        out += r
 
     if root.val in '·#|*':
         return '(' + out + ')'
@@ -72,23 +88,23 @@ def postorder(root):
                 dnode = clone(root.left)
                 root.val = dnode.val
                 root.left = dnode.left
-                root.right = dnode.right 
-                
-                #temp = root.left 
-                #root.right = None 
+                root.right = dnode.right
+
+                #temp = root.left
+                #root.right = None
                 #root = temp
                 #print(inorder(root))
             elif (root.left.val == '|' and (functions.sameTree(root.right, root.left.left) or functions.sameTree(root.right, root.left.right))) or functions.sameTree(root.right, root.left) :
                 #print("HERE")
-                #print(inorder(root)) 
+                #print(inorder(root))
                 temp = clone(root.left)
                 #print(temp.val, 'val')
-                #root.right = None 
-                #root = None 
-                root.left = temp.left 
+                #root.right = None
+                #root = None
+                root.left = temp.left
                 root.right = temp.right
                 root.val = temp.val
-                #print(inorder(root)) 
+                #print(inorder(root))
 
 
         elif root.val == '·':
@@ -129,27 +145,27 @@ def postorder(root):
                 dnode = clone(root.left.left)
                 root.left = dnode
 
-def getPostfix(exp):
+def getPostfix(regex):
     stack = []
-    output = []
-    for c in exp:
+    output = ''
+    for c in regex:
         if c.isalpha():
-            output.append(c)
+            output += (c)
         elif c == "(":
             stack.append(c)
         elif c == ")":
             while len(stack) > 0 and stack[-1] != "(":
-                output.append(stack.pop())
+                output+=(stack.pop())
             else:
                 stack.pop()
         else:
-            while len(stack) > 0 and operations[stack[-1]] >= operations[c]:
-                output.append(stack.pop())
+            while len(stack) > 0 and priority[stack[-1]] >= priority[c]:
+                output+=(stack.pop())
             stack.append(c)
 
     while len(stack) > 0:
-        output.append(stack.pop())
-    return "".join(output)
+        output+=(stack.pop())
+    return (output)
 
 def getBinaryTree(postfix):
     if not postfix:
@@ -174,86 +190,116 @@ def clone(node):
         return None
     return TreeNode(node.val, clone(node.left), clone(node.right))
 
+'''
+ν(a)	= ∅	for any symbol a
+ν(ε)	= ε
+ν(∅)	= ∅
+ν(R*)	= ε
+ν(RS)	= ν(R) ∧ ν(S)
+ν(R ∧ S)	= ν(R) ∧ ν(S)
+ν(R ∨ S)	= ν(R) ∨ ν(S)
+ν(¬R)	= ε	if ν(R) = ∅
+ν(¬R)	= ∅	if ν(R) = ε'''
+def lambda_func(node):
 
-def nullable(node):
-    if node is None:
-        return False
-    elif node.val == 'ε':
+    if node.val == 'ε':
         return True
-    #elif node.val == '∅':
-    #    return False
+    elif node.val == '∅':
+        return False
     elif node.val == '*':
         return True
-    elif node.val == '|':
-        return nullable(node.left) or nullable(node.right)
+    elif node is None:
+        return False
     elif node.val == '·' or node.val == '#':
-        return nullable(node.left) and nullable(node.right)
-
+        return lambda_func(node.left) and lambda_func(node.right)
+    elif node.val == '|':
+        return lambda_func(node.left) or lambda_func(node.right)
+    elif node.val.isalpha():
+        return False
     else:
         return False
-
-def deriv(root, c):
+'''
+a−1a	= ε
+a−1b	= ∅	for each symbol b≠a
+a−1ε	= ∅
+a−1∅	= ∅
+a−1(R*)	= (a−1R)R*
+a−1(RS)	= (a−1R)S ∨ ν(R)a−1S
+a−1(R∧S)	= (a−1R) ∧ (a−1S)
+a−1(R∨S)	= (a−1R) ∨ (a−1S)
+a−1(¬R)	= ¬(a−1R)
+'''
+def brzozowski(root, c):
     stack = [root]
     while len(stack) > 0:
         node = stack.pop()
-        #print(inorder(node))
-        if node is None or node.val == '∅':  
-            continue
-        elif node.val == 'ε':  
-            node.val = '∅'
-        elif node.val == "|":
-            stack.append(node.left)
-            stack.append(node.right)
-        elif node.val == "·":
-            if nullable(node.left):
-                node.val = "|"
-                dnode = TreeNode("·", node.left, node.right)
-                node.left = dnode
-                node.right = clone(dnode.right)
-                stack.append(node.left.left)
-                stack.append(node.right)
-            else:
+        if not node == None:
+            if node.val == c:
+                node.val = 'ε'
+            #print(inorder(node))
+            elif node.val == 'ε':
+                node.val = '∅'
+            elif node.val == '∅':
+                continue
+            elif node.val == "*":
+                star = clone(node)
+                node.val = "·"
+                node.right = star
+                #print(inorder(node.left))
                 stack.append(node.left)
-        elif node.val == c:  
-            node.val = 'ε'
-        elif node.val == "*":  
-            star = clone(node)
-            node.val = "·"
-            node.right = star
-            #print(inorder(node.left))
-            stack.append(node.left)
+            elif node.val == "·":
+                if lambda_func(node.left):
+                    node.val = "|"
+                    dnode = TreeNode("·", node.left, node.right)
+                    node.left = dnode
+                    node.right = clone(dnode.right)
+                    stack.append(node.left.left)
+                    stack.append(node.right)
+                else:
+                    stack.append(node.left)
+            elif node.val == "|":
+                stack.append(node.left)
+                stack.append(node.right)
+            elif node.val == "#":
+                # ((a#b)#b)* = ((a#b)#b)((a#b)#b)* = b#b((a#b)#b)*
+                # (a#b)#b= ∂ₐ(a#b) # b| (a#b) #∂ₐ(b) = b#b
+                # ∂ₐ(a#b) = b
+                node.val = '|'
+                llnode = TreeNode('#', node.left, node.right)
+                dnode = TreeNode('#', clone(node.left), clone(node.right))
 
-        ###(a·b)#(c·d)
-        ###((∅·b)#(c·d)|(a·b)#(∅·d))
-        ###False
-
-        elif node.val == "#":
-            # ((a#b)#b)* = ((a#b)#b)((a#b)#b)* = b#b((a#b)#b)* 
-            # (a#b)#b= ∂ₐ(a#b) # b| (a#b) #∂ₐ(b) = b#b
-            #∂ₐ(a#b) = b
-            node.val = '|'
-            llnode = TreeNode('#',node.left, node.right)
-            dnode= TreeNode('#', clone(node.left), clone(node.right))
-
-            node.left = llnode 
-            node.right = dnode
-            #print(inorder(node), 'inorder', node.left.left.val)
-            #print(inorder(node.right),'inorder', node.right.right.val)
-            stack.append(node.left.left)
-            stack.append(node.right.right)
-# node.left =   # print("-------------------------------")  # print(left_node.left, left_node.right) 
-
+                node.left = llnode
+                node.right = dnode
+                # print(inorder(node), 'inorder', node.left.left.val)
+                # print(inorder(node.right),'inorder', node.right.right.val)
+                stack.append(node.left.left)
+                stack.append(node.right.right)
+            # node.left =   # print("-------------------------------")  # print(left_node.left, left_node.right) 
+    
             # print(right_node.left , right_node.right)  # print("-------------------------------")
-
+    
             # stack.append(node)
-        else:
-            node.val = '∅'  
+    
+ 
+
+    
+
+    
+            ###(a·b)#(c·d)
+            ###((∅·b)#(c·d)|(a·b)#(∅·d))
+            ###False
+    
+    
+            else:
+                node.val = '∅'  
     return root
 
 def getDerived(regex, c):
     #print(regex)
     #print(getPostfix(makeConcat(regex)), 'this is it')
     node =(getBinaryTree(getPostfix(makeConcat(regex))))
+    postorder(node)
+
     node = functions.makeLeftSided(node)
 
     postorder(node)
@@ -261,17 +307,18 @@ def getDerived(regex, c):
 
     result = inorder(node)
     
-    #print(result, "RES1")
 
     #print(node.val)
     #print(node.left.val)
-    a = deriv(node, c)
+    a = brzozowski(node, c)
     #
-    result = inorder(a)
 
     postorder(a)
+    result = inorder(a)
     a = functions.makeLeftSided(a)
     postorder(a)
+    #print(a.right.val, a.right.right.val)
+    #print(inorder(a.right), inorder(a.right.right))
     result = inorder(a)
     #print(result, "RES", c)
     return result
