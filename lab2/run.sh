@@ -7,11 +7,8 @@ while getopts mah OPTION; do
       python3 manual.py
       ;;
     a)
-      echo "auto-testing not fully done yet"
-      for i in {1..100}
-        do 
-          python3 generator.py
-        done
+      echo "auto-testing not done yet"
+
 
       ;;
     h | ?)
