@@ -1,4 +1,7 @@
 import deriv_generator
+#((((a#a))*((((a#a))*|a))*)|(((a((a#a))*)|ε)((((a#a))*|a))*))
+#(((((a((a#a))*)((((a#a))*|a))*)|(((a((a#a))*)|ε)((((a#a))*|a))*))|(((a#a))*((((a#a))*|a))*))|
+#(((a((a#a))*)|ε)((((a#a))*|a))*))
 def validParentheses(string):
     stack = []
     for symbol in string:
@@ -55,8 +58,7 @@ def getHeight(node, level):
 def makeLeftSided(node):
 
     if node == None :
-        return node
-    #if  node.val == '·':
+        return  node   #if  node.val == '·':
     #    return node
     if node.val == '|' and node.right.val == '|':
         #print(deriv_generator.inorder(node))
