@@ -201,21 +201,19 @@ def clone(node):
 ν(¬R)	= ε	if ν(R) = ∅
 ν(¬R)	= ∅	if ν(R) = ε'''
 def lambda_func(node):
+    if node is None:
+        return False
+    elif node.val == 'ε' or node.val == '*':
+        return True
+    #elif node.val == '∅':
+    #    return False
 
-    if node.val == 'ε':
-        return True
-    elif node.val == '∅':
-        return False
-    elif node.val == '*':
-        return True
-    elif node is None:
-        return False
     elif node.val == '·' or node.val == '#':
         return lambda_func(node.left) and lambda_func(node.right)
     elif node.val == '|':
         return lambda_func(node.left) or lambda_func(node.right)
-    elif node.val.isalpha():
-        return False
+    #elif node.val.isalpha():
+    #    return False
     else:
         return False
 '''
